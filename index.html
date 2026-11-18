@@ -11,4 +11,1350 @@
 <p><h4>Welkom bij deze website, voor school wou ik graag een uur per week inplannen waarop leerlingen het spel <i>pokerogue</i> spelen. </h4>
   <script src="script.js"></script>
 </body>
+</html><!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Ruimteverdediger - Arcade Game</title>
+    <!-- Tailwind CSS voor responsieve layout en UI componenten -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts voor een futuristische arcade uitstraling -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Aangepaste CSS voor de game-omgeving en neon effecten */
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050510;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .font-arcade {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Neon gloed effecten */
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.8), 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(255, 0, 128, 0.8), 0 0 20px rgba(255, 0, 128, 0.4);
+        }
+
+        .neon-box {
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.25), inset 0 0 15px rgba(0, 243, 255, 0.15);
+            border: 1px solid rgba(0, 243, 255, 0.4);
+        }
+
+        /* Stijlvolle arcade knoppen */
+        .btn-arcade {
+            background: linear-gradient(135deg, #00f3ff 0%, #0077ff 100%);
+            color: #050510;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            letter-spacing: 1px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.6), 0 4px 0 #004499;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+
+        .btn-arcade:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.9), 0 6px 0 #004499;
+            filter: brightness(1.1);
+        }
+
+        .btn-arcade:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.6), 0 2px 0 #004499;
+        }
+
+        .btn-secondary {
+            background: rgba(15, 23, 42, 0.85);
+            color: #00f3ff;
+            border: 1px solid rgba(0, 243, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 243, 255, 0.15);
+            border-color: #00f3ff;
+        }
+
+        /* Canvas container voor perfecte responsiviteit */
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 72vh;
+            min-height: 420px;
+            max-height: 750px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0d1128 0%, #04050c 100%);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Animatie voor level-up melding */
+        @keyframes pulseFade {
+            0% { opacity: 0; transform: scale(0.8); }
+            20% { opacity: 1; transform: scale(1.05); }
+            80% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.1); }
+        }
+
+        .level-banner {
+            animation: pulseFade 2s ease-in-out forwards;
+        }
+    </style>
+</head>
+<body class="p-3 sm:p-5">
+
+    <!-- Bovenste HUD / Scorebord -->
+    <header class="w-full max-w-[800px] mb-3 flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 backdrop-blur-md px-4 py-3 rounded-2xl neon-box">
+        <div class="flex items-center gap-4 sm:gap-6">
+            <div>
+                <span class="block text-[10px] sm:text-xs uppercase tracking-wider text-cyan-400 font-semibold">Score</span>
+                <span id="ui-score" class="font-arcade text-lg sm:text-2xl font-bold text-white">0</span>
+            </div>
+            <div>
+                <span class="block text-[10px] sm:text-xs uppercase tracking-wider text-pink-400 font-semibold">Highscore</span>
+                <span id="ui-highscore" class="font-arcade text-lg sm:text-2xl font-bold text-pink-300">0</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 sm:gap-6">
+            <div class="text-center">
+                <span class="block text-[10px] sm:text-xs uppercase tracking-wider text-purple-400 font-semibold">Level</span>
+                <span id="ui-level" class="font-arcade text-lg sm:text-2xl font-bold text-purple-300">1</span>
+            </div>
+            <div class="text-right">
+                <span class="block text-[10px] sm:text-xs uppercase tracking-wider text-emerald-400 font-semibold">Levens</span>
+                <div id="ui-lives" class="flex items-center justify-end gap-1 mt-0.5 text-lg sm:text-xl">
+                    <!-- Hartjes worden dynamisch gevuld via JS -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hoofd Speelveld Container -->
+    <main id="game-wrapper" class="neon-box relative shadow-2xl">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Tijdelijke melding in het midden van het scherm (bijv. Level Up / Powerup) -->
+        <div id="floating-banner" class="pointer-events-none absolute inset-0 flex items-center justify-center hidden">
+            <h2 id="banner-text" class="font-arcade text-3xl sm:text-5xl font-black text-cyan-300 neon-text-cyan tracking-widest uppercase text-center px-4">
+                LEVEL 2
+            </h2>
+        </div>
+
+        <!-- Startscherm Overlay -->
+        <div id="start-screen" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+            <div class="mb-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-xs font-semibold tracking-widest uppercase">
+                Arcade Editie
+            </div>
+            <h1 class="font-arcade text-3xl sm:text-5xl font-black text-white neon-text-cyan mb-3 leading-tight">
+                NEON<br><span class="text-pink-500 neon-text-pink">RUIMTEVERDEDIGER</span>
+            </h1>
+            <p class="text-slate-300 text-sm sm:text-base max-w-md mb-6 leading-relaxed">
+                Verdedig de melkweg tegen golven neon-vijanden en asteroïden. Verzamel power-ups voor dubbel vuur en schilden!
+            </p>
+
+            <!-- Besturingsuitleg -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md mb-7 text-left text-xs sm:text-sm">
+                <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl flex items-center gap-3">
+                    <span class="text-xl">⌨️</span>
+                    <div>
+                        <strong class="text-cyan-300 block">Toetsenbord</strong>
+                        <span class="text-slate-400">Pijltjes / A-D om te sturen, Spatie om te schieten</span>
+                    </div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-700/80 p-3 rounded-xl flex items-center gap-3">
+                    <span class="text-xl">👆</span>
+                    <div>
+                        <strong class="text-pink-400 block">Muis & Touch</strong>
+                        <span class="text-slate-400">Sleep of beweeg om te vliegen (vuurt automatisch)</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-start" class="btn-arcade px-8 py-4 rounded-2xl text-base sm:text-lg uppercase">
+                Start Missie
+            </button>
+        </div>
+
+        <!-- Pauze Overlay -->
+        <div id="pause-screen" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+            <h2 class="font-arcade text-3xl sm:text-4xl font-bold text-cyan-300 neon-text-cyan mb-6">GEPAUZEERD</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="btn-resume" class="btn-arcade px-7 py-3 rounded-xl text-base">
+                    Hervatten
+                </button>
+                <button id="btn-restart-pause" class="btn-secondary px-7 py-3 rounded-xl text-base font-semibold">
+                    Opnieuw Beginnen
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Scherm Overlay -->
+        <div id="gameover-screen" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20">
+            <h2 class="font-arcade text-4xl sm:text-5xl font-black text-pink-500 neon-text-pink mb-2">
+                GAME OVER
+            </h2>
+            <p id="gameover-subtitle" class="text-slate-300 text-sm sm:text-base mb-6">
+                Je ruimteschip is vernietigd!
+            </p>
+
+            <div class="bg-slate-900/90 border border-slate-700 rounded-2xl p-5 w-full max-w-xs mb-7 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400 text-sm">Eindscore</span>
+                    <span id="final-score" class="font-arcade text-2xl font-bold text-cyan-300">0</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400 text-sm">Behaald Level</span>
+                    <span id="final-level" class="font-arcade text-xl font-bold text-purple-300">1</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm">Beste Score</span>
+                    <span id="final-highscore" class="font-arcade text-xl font-bold text-pink-400">0</span>
+                </div>
+            </div>
+
+            <button id="btn-restart" class="btn-arcade px-8 py-4 rounded-2xl text-base sm:text-lg uppercase">
+                Speel Opnieuw
+            </button>
+        </div>
+    </main>
+
+    <!-- Onderste Bedieningsbalk (buiten het canvas geplaatst) -->
+    <footer class="w-full max-w-[800px] mt-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+            <button id="btn-sound" class="btn-secondary px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2">
+                <span id="sound-icon">🔊</span>
+                <span id="sound-label">Geluid: Aan</span>
+            </button>
+            <button id="btn-pause" class="btn-secondary px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold hidden">
+                ⏸️ Pauze
+            </button>
+        </div>
+
+        <!-- Mobiele / On-screen actieknoppen voor extra gemak -->
+        <div id="mobile-controls" class="flex items-center gap-2">
+            <button id="btn-left" aria-label="Links" class="btn-secondary w-12 h-11 rounded-xl flex items-center justify-center text-lg active:bg-cyan-500/30">
+                ◀
+            </button>
+            <button id="btn-fire" aria-label="Vuur" class="btn-secondary px-4 h-11 rounded-xl flex items-center justify-center text-xs sm:text-sm font-arcade font-bold text-pink-400 border-pink-500/40 active:bg-pink-500/30">
+                VUUR
+            </button>
+            <button id="btn-right" aria-label="Rechts" class="btn-secondary w-12 h-11 rounded-xl flex items-center justify-center text-lg active:bg-cyan-500/30">
+                ▶
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        /**
+         * NEON RUIMTEVERDEDIGER
+         * Complete HTML5 Canvas Arcade Game met Web Audio API synthesizers
+         */
+
+        // ==========================================
+        // 1. WEB AUDIO API GELUIDSEFFECTEN SYSTEEM
+        // ==========================================
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            // Initialiseer AudioContext na eerste gebruikersinteractie
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+
+            // Laser schot geluid
+            playShoot(isPowered = false) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = isPowered ? 'sawtooth' : 'triangle';
+                    osc.frequency.setValueAtTime(isPowered ? 920 : 760, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.12);
+
+                    gain.gain.setValueAtTime(0.14, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } catch (e) { /* Negeer audio fouten op oudere browsers */ }
+            }
+
+            // Explosie geluid met witte ruis en lage bass drop
+            playExplosion(large = false) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const duration = large ? 0.45 : 0.25;
+
+                    // Ruis buffer genereren
+                    const bufferSize = this.ctx.sampleRate * duration;
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    // Lowpass filter voor doffe explosie
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(large ? 600 : 900, now);
+                    filter.frequency.exponentialRampToValueAtTime(60, now + duration);
+
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(large ? 0.28 : 0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    noise.start(now);
+                    noise.stop(now + duration);
+                } catch (e) {}
+            }
+
+            // Power-up oppakken geluid
+            playPowerup() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.055);
+                        gain.gain.setValueAtTime(0.15, now + idx * 0.055);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.15);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.055);
+                        osc.stop(now + idx * 0.055 + 0.15);
+                    });
+                } catch (e) {}
+            }
+
+            // Schade opgelopen geluid
+            playHit() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(55, now + 0.3);
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } catch (e) {}
+            }
+
+            // Level omhoog fanfare
+            playLevelUp() {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const melody = [440, 554.37, 659.25, 880];
+                    melody.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.09);
+                        gain.gain.setValueAtTime(0.16, now + i * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.25);
+
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + i * 0.09);
+                        osc.stop(now + i * 0.09 + 0.25);
+                    });
+                } catch (e) {}
+            }
+        }
+
+        // ==========================================
+        // 2. GAME INITIALISATIE & VARIABELEN
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('game-wrapper');
+        const sound = new SoundEngine();
+
+        // UI Elementen
+        const uiScore = document.getElementById('ui-score');
+        const uiHighscore = document.getElementById('ui-highscore');
+        const uiLevel = document.getElementById('ui-level');
+        const uiLives = document.getElementById('ui-lives');
+
+        const startScreen = document.getElementById('start-screen');
+        const pauseScreen = document.getElementById('pause-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const floatingBanner = document.getElementById('floating-banner');
+        const bannerText = document.getElementById('banner-text');
+
+        const btnStart = document.getElementById('btn-start');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnResume = document.getElementById('btn-resume');
+        const btnRestartPause = document.getElementById('btn-restart-pause');
+        const btnPause = document.getElementById('btn-pause');
+        const btnSound = document.getElementById('btn-sound');
+
+        // Game Status
+        let gameState = 'START'; // START, PLAYING, PAUSED, GAMEOVER
+        let score = 0;
+        let highscore = parseInt(localStorage.getItem('neon_defender_highscore')) || 0;
+        let level = 1;
+        let lives = 3;
+        let lastTime = 0;
+        let screenShake = 0;
+
+        // Entiteiten lijsten
+        let stars = [];
+        let bullets = [];
+        let enemyBullets = [];
+        let enemies = [];
+        let particles = [];
+        let powerups = [];
+
+        // Timers
+        let enemySpawnTimer = 0;
+        let shootCooldown = 0;
+
+        // Input status
+        const keys = {
+            left: false,
+            right: false,
+            shoot: false
+        };
+        let pointerActive = false;
+        let pointerX = null;
+
+        // Speler object
+        const player = {
+            x: 0,
+            y: 0,
+            width: 44,
+            height: 48,
+            speed: 440,
+            invulnerableTimer: 0,
+            doubleShotTimer: 0,
+            shieldActive: false
+        };
+
+        // ==========================================
+        // 3. RESPONSIVE CANVAS & ACHTERGROND STERREN
+        // ==========================================
+        function resizeCanvas() {
+            const rect = wrapper.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            // Houd speler binnen nieuwe grenzen
+            if (player.x === 0) {
+                player.x = rect.width / 2;
+            } else {
+                player.x = Math.max(player.width / 2, Math.min(rect.width - player.width / 2, player.x));
+            }
+            player.y = rect.height - 55;
+
+            initStars(rect.width, rect.height);
+        }
+
+        function initStars(w, h) {
+            stars = [];
+            const count = Math.floor((w * h) / 6500);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    size: Math.random() * 2 + 0.5,
+                    speed: Math.random() * 90 + 25,
+                    alpha: Math.random() * 0.7 + 0.3
+                });
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // ==========================================
+        // 4. UI & HUD UPDATES
+        // ==========================================
+        function updateHUD() {
+            uiScore.textContent = score.toLocaleString('nl-NL');
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('neon_defender_highscore', highscore);
+            }
+            uiHighscore.textContent = highscore.toLocaleString('nl-NL');
+            uiLevel.textContent = level;
+
+            // Levens weergeven met hart-iconen
+            uiLives.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const span = document.createElement('span');
+                span.textContent = i < lives ? '❤️' : '🖤';
+                span.className = i < lives ? 'drop-shadow-[0_0_6px_rgba(244,63,94,0.8)]' : 'opacity-40';
+                uiLives.appendChild(span);
+            }
+        }
+
+        function showBanner(text, colorClass = 'text-cyan-300 neon-text-cyan') {
+            bannerText.textContent = text;
+            bannerText.className = `font-arcade text-3xl sm:text-5xl font-black tracking-widest uppercase text-center px-4 level-banner ${colorClass}`;
+            floatingBanner.classList.remove('hidden');
+            // Reset animatie
+            void floatingBanner.offsetWidth;
+            setTimeout(() => {
+                floatingBanner.classList.add('hidden');
+            }, 2000);
+        }
+
+        // ==========================================
+        // 5. GAME FLOW (START, PAUZE, GAME OVER)
+        // ==========================================
+        function startGame() {
+            sound.init();
+            const rect = wrapper.getBoundingClientRect();
+
+            score = 0;
+            level = 1;
+            lives = 3;
+            bullets = [];
+            enemyBullets = [];
+            enemies = [];
+            particles = [];
+            powerups = [];
+            enemySpawnTimer = 0.5;
+            shootCooldown = 0;
+
+            player.x = rect.width / 2;
+            player.y = rect.height - 55;
+            player.invulnerableTimer = 1.5;
+            player.doubleShotTimer = 0;
+            player.shieldActive = false;
+
+            gameState = 'PLAYING';
+            startScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            pauseScreen.classList.add('hidden');
+            btnPause.classList.remove('hidden');
+
+            updateHUD();
+            showBanner('LEVEL 1 - START!');
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseScreen.classList.remove('hidden');
+                btnPause.innerHTML = '▶️ Verder';
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseScreen.classList.add('hidden');
+                btnPause.innerHTML = '⏸️ Pauze';
+                lastTime = performance.now();
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            sound.playExplosion(true);
+            btnPause.classList.add('hidden');
+
+            document.getElementById('final-score').textContent = score.toLocaleString('nl-NL');
+            document.getElementById('final-level').textContent = level;
+            document.getElementById('final-highscore').textContent = highscore.toLocaleString('nl-NL');
+
+            const subtitle = document.getElementById('gameover-subtitle');
+            subtitle.textContent = score >= highscore && score > 0
+                ? '🎉 Nieuwe Highscore! Fantastisch gevlogen!'
+                : 'Je ruimteschip is vernietigd in de strijd!';
+
+            gameoverScreen.classList.remove('hidden');
+        }
+
+        // ==========================================
+        // 6. SPELMECHANIEKEN (SCHIETEN, VIJANDEN, POWERUPS)
+        // ==========================================
+        function firePlayerWeapon() {
+            if (shootCooldown > 0) return;
+
+            const isDouble = player.doubleShotTimer > 0;
+            sound.playShoot(isDouble);
+
+            if (isDouble) {
+                bullets.push({
+                    x: player.x - 14,
+                    y: player.y - 18,
+                    vx: 0,
+                    vy: -650,
+                    radius: 4,
+                    color: '#ff0080'
+                });
+                bullets.push({
+                    x: player.x + 14,
+                    y: player.y - 18,
+                    vx: 0,
+                    vy: -650,
+                    radius: 4,
+                    color: '#ff0080'
+                });
+                shootCooldown = 0.18;
+            } else {
+                bullets.push({
+                    x: player.x,
+                    y: player.y - 24,
+                    vx: 0,
+                    vy: -620,
+                    radius: 4,
+                    color: '#00f3ff'
+                });
+                shootCooldown = 0.22;
+            }
+        }
+
+        function spawnEnemy(canvasWidth) {
+            const margin = 36;
+            const x = margin + Math.random() * (canvasWidth - margin * 2);
+
+            // Kies vijandtype op basis van level
+            const roll = Math.random();
+            let type = 'scout'; // Standaard snelle vijand
+            if (level >= 2 && roll > 0.65) {
+                type = 'heavy'; // Sterkere vijand (2 levens)
+            }
+            if (level >= 3 && roll > 0.82) {
+                type = 'shooter'; // Vijand die terugschiet
+            }
+
+            const speedMultiplier = 1 + (level - 1) * 0.14;
+
+            if (type === 'heavy') {
+                enemies.push({
+                    x,
+                    y: -30,
+                    width: 46,
+                    height: 38,
+                    vx: (Math.random() - 0.5) * 40,
+                    vy: (95 + Math.random() * 35) * speedMultiplier,
+                    hp: 2,
+                    maxHp: 2,
+                    points: 250,
+                    color: '#a855f7', // Neon paars
+                    type: 'heavy',
+                    shootTimer: 0
+                });
+            } else if (type === 'shooter') {
+                enemies.push({
+                    x,
+                    y: -30,
+                    width: 40,
+                    height: 36,
+                    vx: (Math.random() < 0.5 ? -1 : 1) * 75,
+                    vy: (85 + Math.random() * 25) * speedMultiplier,
+                    hp: 2,
+                    maxHp: 2,
+                    points: 350,
+                    color: '#f43f5e', // Neon rood/roze
+                    type: 'shooter',
+                    shootTimer: 1.2 + Math.random()
+                });
+            } else {
+                enemies.push({
+                    x,
+                    y: -25,
+                    width: 34,
+                    height: 32,
+                    vx: Math.sin(Math.random() * Math.PI * 2) * 50,
+                    vy: (145 + Math.random() * 55) * speedMultiplier,
+                    hp: 1,
+                    maxHp: 1,
+                    points: 100,
+                    color: '#10b981', // Neon smaragdgroen
+                    type: 'scout',
+                    shootTimer: 0
+                });
+            }
+        }
+
+        function spawnPowerup(x, y) {
+            // 18% kans op een power-up bij vernietigen van een vijand
+            if (Math.random() > 0.18) return;
+
+            const types = ['DOUBLE', 'SHIELD', 'LIFE'];
+            const weights = [0.5, 0.35, 0.15];
+            const r = Math.random();
+            let chosen = 'DOUBLE';
+            if (r > weights[0] + weights[1]) chosen = 'LIFE';
+            else if (r > weights[0]) chosen = 'SHIELD';
+
+            powerups.push({
+                x,
+                y,
+                vy: 130,
+                radius: 15,
+                type: chosen,
+                pulse: 0
+            });
+        }
+
+        function createExplosion(x, y, color, count = 18) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 220 + 40;
+                particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    decay: Math.random() * 1.8 + 1.2,
+                    size: Math.random() * 3.5 + 1.5,
+                    color
+                });
+            }
+        }
+
+        function damagePlayer() {
+            if (player.invulnerableTimer > 0) return;
+
+            if (player.shieldActive) {
+                player.shieldActive = false;
+                player.invulnerableTimer = 1.2;
+                screenShake = 8;
+                sound.playHit();
+                createExplosion(player.x, player.y, '#00f3ff', 15);
+                showBanner('SCHILD GEBROKEN!', 'text-cyan-300');
+                return;
+            }
+
+            lives--;
+            screenShake = 14;
+            sound.playHit();
+            createExplosion(player.x, player.y, '#ff0080', 25);
+            updateHUD();
+
+            if (lives <= 0) {
+                triggerGameOver();
+            } else {
+                player.invulnerableTimer = 2.0;
+            }
+        }
+
+        // ==========================================
+        // 7. UPDATE LOOP (LOGICA & FYSICA)
+        // ==========================================
+        function update(dt) {
+            const rect = wrapper.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            // Achtergrond sterren altijd laten bewegen voor sfeer
+            stars.forEach(star => {
+                star.y += star.speed * dt;
+                if (star.y > height) {
+                    star.y = 0;
+                    star.x = Math.random() * width;
+                }
+            });
+
+            if (gameState !== 'PLAYING') return;
+
+            // Scherm trilling afbouwen
+            if (screenShake > 0) {
+                screenShake = Math.max(0, screenShake - dt * 35);
+            }
+
+            // Timers bijwerken
+            if (shootCooldown > 0) shootCooldown -= dt;
+            if (player.invulnerableTimer > 0) player.invulnerableTimer -= dt;
+            if (player.doubleShotTimer > 0) player.doubleShotTimer -= dt;
+
+            // Speler beweging (Toetsenbord)
+            let moveDir = 0;
+            if (keys.left) moveDir -= 1;
+            if (keys.right) moveDir += 1;
+
+            if (moveDir !== 0) {
+                player.x += moveDir * player.speed * dt;
+                pointerActive = false; // Toetsenbord neemt over van pointer
+            } else if (pointerActive && pointerX !== null) {
+                // Vloeiende beweging richting muis of vinger
+                const diff = pointerX - player.x;
+                player.x += diff * Math.min(1, dt * 16);
+            }
+
+            // Houd speler binnen het speelveld
+            const halfW = player.width / 2;
+            player.x = Math.max(halfW + 6, Math.min(width - halfW - 6, player.x));
+
+            // Automatisch vuren bij touch/muis ingedrukt of spatiebalk
+            if (keys.shoot || pointerActive) {
+                firePlayerWeapon();
+            }
+
+            // Speler kogels updaten
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                if (b.y < -20) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Vijand kogels updaten
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const eb = enemyBullets[i];
+                eb.x += eb.vx * dt;
+                eb.y += eb.vy * dt;
+
+                // Botsing met speler
+                const dx = eb.x - player.x;
+                const dy = eb.y - player.y;
+                if (Math.hypot(dx, dy) < eb.radius + 18) {
+                    enemyBullets.splice(i, 1);
+                    damagePlayer();
+                    continue;
+                }
+
+                if (eb.y > height + 20) {
+                    enemyBullets.splice(i, 1);
+                }
+            }
+
+            // Vijanden spawnen
+            enemySpawnTimer -= dt;
+            if (enemySpawnTimer <= 0) {
+                spawnEnemy(width);
+                // Snellere spawns bij hogere levels
+                enemySpawnTimer = Math.max(0.38, 1.35 - (level - 1) * 0.12);
+            }
+
+            // Vijanden updaten & botsingen controleren
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.x += e.vx * dt;
+                e.y += e.vy * dt;
+
+                // Stuiter tegen zijkanten
+                if (e.x < e.width / 2 + 8 || e.x > width - e.width / 2 - 8) {
+                    e.vx *= -1;
+                }
+
+                // Schietende vijanden
+                if (e.type === 'shooter') {
+                    e.shootTimer -= dt;
+                    if (e.shootTimer <= 0 && e.y > 30 && e.y < height * 0.65) {
+                        e.shootTimer = 2.0;
+                        enemyBullets.push({
+                            x: e.x,
+                            y: e.y + e.height / 2,
+                            vx: 0,
+                            vy: 290 + level * 15,
+                            radius: 5,
+                            color: '#ff2a5f'
+                        });
+                    }
+                }
+
+                // Botsing tussen speler-kogel en vijand
+                let enemyDestroyed = false;
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const b = bullets[j];
+                    if (
+                        Math.abs(b.x - e.x) < e.width / 2 + b.radius &&
+                        Math.abs(b.y - e.y) < e.height / 2 + b.radius
+                    ) {
+                        bullets.splice(j, 1);
+                        e.hp--;
+                        createExplosion(b.x, b.y, e.color, 6);
+
+                        if (e.hp <= 0) {
+                            enemyDestroyed = true;
+                            score += e.points;
+                            sound.playExplosion(e.type === 'heavy');
+                            createExplosion(e.x, e.y, e.color, 20);
+                            spawnPowerup(e.x, e.y);
+
+                            // Level-up controle (elke 1500 punten een nieuw level)
+                            const newLevel = Math.floor(score / 1500) + 1;
+                            if (newLevel > level) {
+                                level = newLevel;
+                                sound.playLevelUp();
+                                showBanner(`LEVEL ${level}!`);
+                            }
+                            updateHUD();
+                        }
+                        break;
+                    }
+                }
+
+                if (enemyDestroyed) {
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                // Botsing tussen vijand en speler
+                if (
+                    Math.abs(e.x - player.x) < (e.width + player.width) * 0.42 &&
+                    Math.abs(e.y - player.y) < (e.height + player.height) * 0.42
+                ) {
+                    enemies.splice(i, 1);
+                    createExplosion(e.x, e.y, e.color, 16);
+                    damagePlayer();
+                    continue;
+                }
+
+                // Vijand voorbij onderkant scherm
+                if (e.y > height + 40) {
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // Power-ups updaten
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                p.y += p.vy * dt;
+                p.pulse += dt * 6;
+
+                // Oppakken door speler
+                if (Math.hypot(p.x - player.x, p.y - player.y) < p.radius + 24) {
+                    sound.playPowerup();
+                    if (p.type === 'DOUBLE') {
+                        player.doubleShotTimer = 8.0;
+                        showBanner('DUBBEL VUUR!', 'text-pink-400 neon-text-pink');
+                    } else if (p.type === 'SHIELD') {
+                        player.shieldActive = true;
+                        showBanner('ENERGIESCHILD!', 'text-cyan-300 neon-text-cyan');
+                    } else if (p.type === 'LIFE') {
+                        if (lives < 3) {
+                            lives++;
+                            updateHUD();
+                            showBanner('EXTRA LEVEN!', 'text-emerald-400');
+                        } else {
+                            score += 500;
+                            updateHUD();
+                            showBanner('+500 BONUS!', 'text-yellow-300');
+                        }
+                    }
+                    powerups.splice(i, 1);
+                    continue;
+                }
+
+                if (p.y > height + 30) {
+                    powerups.splice(i, 1);
+                }
+            }
+
+            // Explosie deeltjes updaten
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.life -= pt.decay * dt;
+                if (pt.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // ==========================================
+        // 8. RENDER LOOP (TEKENEN OP CANVAS)
+        // ==========================================
+        function drawPlayer() {
+            // Knipperen bij onkwetsbaarheid
+            if (player.invulnerableTimer > 0 && Math.floor(player.invulnerableTimer * 14) % 2 === 0) {
+                return;
+            }
+
+            ctx.save();
+            ctx.translate(player.x, player.y);
+
+            // Motor vlam animatie
+            const flameHeight = 12 + Math.random() * 10;
+            ctx.beginPath();
+            ctx.moveTo(-8, 18);
+            ctx.lineTo(0, 18 + flameHeight);
+            ctx.lineTo(8, 18);
+            ctx.fillStyle = player.doubleShotTimer > 0 ? '#ff0080' : '#00f3ff';
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.fill();
+
+            // Hoofdvleugels van het ruimteschip
+            ctx.beginPath();
+            ctx.moveTo(0, -24);
+            ctx.lineTo(22, 18);
+            ctx.lineTo(8, 13);
+            ctx.lineTo(0, 20);
+            ctx.lineTo(-8, 13);
+            ctx.lineTo(-22, 18);
+            ctx.closePath();
+
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = player.doubleShotTimer > 0 ? '#ff0080' : '#00f3ff';
+            ctx.lineWidth = 2.5;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.fill();
+            ctx.stroke();
+
+            // Cockpit glas
+            ctx.beginPath();
+            ctx.moveTo(0, -10);
+            ctx.lineTo(6, 5);
+            ctx.lineTo(-6, 5);
+            ctx.closePath();
+            ctx.fillStyle = '#e0f2fe';
+            ctx.fill();
+
+            // Energieschild indien actief
+            if (player.shieldActive) {
+                ctx.beginPath();
+                ctx.arc(0, 0, 32, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0, 243, 255, 0.85)';
+                ctx.lineWidth = 2;
+                ctx.fillStyle = 'rgba(0, 243, 255, 0.12)';
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawEnemy(e) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.strokeStyle = e.color;
+            ctx.fillStyle = '#090d16';
+            ctx.lineWidth = 2.2;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = e.color;
+
+            if (e.type === 'heavy') {
+                // Zeshoekige zware kruiser
+                ctx.beginPath();
+                ctx.moveTo(-e.width / 2, -e.height / 4);
+                ctx.lineTo(0, -e.height / 2);
+                ctx.lineTo(e.width / 2, -e.height / 4);
+                ctx.lineTo(e.width / 2, e.height / 4);
+                ctx.lineTo(0, e.height / 2);
+                ctx.lineTo(-e.width / 2, e.height / 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Kern indicator voor levens
+                ctx.fillStyle = e.hp > 1 ? e.color : '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (e.type === 'shooter') {
+                // Onderscheppingsjager
+                ctx.beginPath();
+                ctx.moveTo(0, e.height / 2);
+                ctx.lineTo(e.width / 2, -e.height / 2);
+                ctx.lineTo(0, -e.height / 4);
+                ctx.lineTo(-e.width / 2, -e.height / 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            } else {
+                // Snelle scout drone
+                ctx.beginPath();
+                ctx.moveTo(0, e.height / 2);
+                ctx.lineTo(e.width / 2, -e.height / 3);
+                ctx.lineTo(0, -e.height / 2);
+                ctx.lineTo(-e.width / 2, -e.height / 3);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawPowerup(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            const scale = 1 + Math.sin(p.pulse) * 0.1;
+            ctx.scale(scale, scale);
+
+            let color = '#ff0080';
+            let label = '2X';
+            if (p.type === 'SHIELD') {
+                color = '#00f3ff';
+                label = '🛡️';
+            } else if (p.type === 'LIFE') {
+                color = '#10b981';
+                label = '❤️';
+            }
+
+            ctx.beginPath();
+            ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.5;
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = color;
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px Orbitron, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, 0, 1);
+
+            ctx.restore();
+        }
+
+        function draw() {
+            const rect = wrapper.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.save();
+            // Scherm trilling toepassen bij inslag
+            if (screenShake > 0) {
+                const dx = (Math.random() - 0.5) * screenShake;
+                const dy = (Math.random() - 0.5) * screenShake;
+                ctx.translate(dx, dy);
+            }
+
+            // 1. Sterrenhemel tekenen
+            stars.forEach(star => {
+                ctx.fillStyle = `rgba(224, 242, 254, ${star.alpha})`;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+
+            // 2. Power-ups tekenen
+            powerups.forEach(drawPowerup);
+
+            // 3. Speler kogels tekenen
+            bullets.forEach(b => {
+                ctx.save();
+                ctx.fillStyle = b.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = b.color;
+                ctx.beginPath();
+                ctx.roundRect(b.x - 2.5, b.y - 10, 5, 18, 3);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 4. Vijand kogels tekenen
+            enemyBullets.forEach(eb => {
+                ctx.save();
+                ctx.fillStyle = eb.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = eb.color;
+                ctx.beginPath();
+                ctx.arc(eb.x, eb.y, eb.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 5. Vijanden tekenen
+            enemies.forEach(drawEnemy);
+
+            // 6. Speler ruimteschip tekenen
+            if (gameState !== 'GAMEOVER') {
+                drawPlayer();
+            }
+
+            // 7. Explosie deeltjes tekenen
+            particles.forEach(pt => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, pt.life);
+                ctx.fillStyle = pt.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+            lastTime = timestamp;
+
+            update(dt);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==========================================
+        // 9. BESTURING (TOETSENBORD, MUIS & TOUCH)
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                keys.shoot = true;
+                if (gameState === 'PLAYING') e.preventDefault();
+            }
+            if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+                if (gameState === 'PLAYING' || gameState === 'PAUSED') togglePause();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.shoot = false;
+        });
+
+        // Muis en Touch interactie op het canvas
+        function updatePointerPosition(clientX) {
+            const rect = canvas.getBoundingClientRect();
+            pointerX = clientX - rect.left;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameState !== 'PLAYING') return;
+            pointerActive = true;
+            updatePointerPosition(e.clientX);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (pointerActive && gameState === 'PLAYING') {
+                updatePointerPosition(e.clientX);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            pointerActive = false;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState !== 'PLAYING') return;
+            e.preventDefault();
+            pointerActive = true;
+            if (e.touches.length > 0) {
+                updatePointerPosition(e.touches[0].clientX);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState !== 'PLAYING') return;
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                updatePointerPosition(e.touches[0].clientX);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            pointerActive = false;
+        });
+
+        // On-screen knoppen voor mobiel / muis
+        const bindHoldButton = (btnId, keyName) => {
+            const el = document.getElementById(btnId);
+            const startHold = (e) => { e.preventDefault(); keys[keyName] = true; };
+            const endHold = (e) => { e.preventDefault(); keys[keyName] = false; };
+            el.addEventListener('mousedown', startHold);
+            el.addEventListener('touchstart', startHold, { passive: false });
+            el.addEventListener('mouseup', endHold);
+            el.addEventListener('mouseleave', endHold);
+            el.addEventListener('touchend', endHold);
+        };
+
+        bindHoldButton('btn-left', 'left');
+        bindHoldButton('btn-right', 'right');
+        bindHoldButton('btn-fire', 'shoot');
+
+        // UI Knop Event Listeners
+        btnStart.addEventListener('click', startGame);
+        btnRestart.addEventListener('click', startGame);
+        btnRestartPause.addEventListener('click', startGame);
+        btnResume.addEventListener('click', togglePause);
+        btnPause.addEventListener('click', togglePause);
+
+        btnSound.addEventListener('click', () => {
+            sound.init();
+            const isMuted = sound.toggleMute();
+            document.getElementById('sound-icon').textContent = isMuted ? '🔇' : '🔊';
+            document.getElementById('sound-label').textContent = isMuted ? 'Geluid: Uit' : 'Geluid: Aan';
+        });
+
+        // Start alles op zodra de pagina geladen is
+        window.onload = function () {
+            resizeCanvas();
+            updateHUD();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
 </html>
